@@ -1,0 +1,268 @@
+import paho.mqtt.client as mqtt
+import time
+import threading
+
+    # MQTT Broker-Daten
+broker_address = "localhost"    
+port = 1883 
+
+
+topics = [
+    ("SFB/Sensor/S1", 0), ("SFB/Sensor/S2", 0), ("SFB/Sensor/S3", 0),
+    ("SFB/Endschalter/B1", 0), ("SFB/Endschalter/B2", 0), ("SFB/Endschalter/B3", 0),
+    ("SFB/Endschalter/B4", 0), ("SFB/Endschalter/B5", 0), ("SFB/Endschalter/B6", 0),
+    ("SFB/Endschalter/B7", 0), ("SFB/Endschalter/B8", 0), 
+
+    ("SFB/Aktor/Q1", 0),("SFB/Aktor/Q2", 0),("SFB/Aktor/Q3", 0),("SFB/Aktor/Q4", 0),("SFB/Aktor/Q5", 0),("SFB/Aktor/Q6", 0),
+    ("SFB/Aktor/P1", 0),("SFB/Aktor/P2", 0),("SFB/Aktor/P3", 0),("SFB/Aktor/P4", 0),
+    ("SFB/Aktor/Y1", 0),("SFB/Aktor/Y2", 0),("SFB/Aktor/Y3", 0),("SFB/Aktor/Y4", 0),("SFB/Aktor/Y5", 0), 
+    ("Step_1",0),("Step_2",0),("Step_3",0),("Step_4",0),("Step_5",0),("Step_6",0),("Step_7",0),("Step_8",0),("Step_9",0),
+    ("Step_10",0),("Step_11",0),("Step_12",0),("Step_13",0),("Step_14",0),("Step_15",0),
+    
+]
+
+
+
+
+
+
+
+
+sensor_data = {}
+
+
+def on_message(client, userdata, message):
+
+    topic = message.topic
+    payload = message.payload.decode()
+
+    # Speichern der Nachricht in einem Dictionary
+    sensor_data[topic] = payload
+ 
+    print(f"Received message on topic {topic}: {payload}")
+    
+
+
+   
+
+
+ #   Not-Aus -----------------------------------------------------
+
+    if topic == "SFB/Sensor/S0" and payload == "1":
+            client.publish("SFB/Aktor/Q1", "0")
+            client.publish("SFB/Aktor/Q2", "1")
+            client.publish("SFB/Aktor/Q5", "1")
+            client.publish("SFB/Aktor/Q4", "0")
+            client.publish("SFB/Aktor/Q3", "0")
+            client.publish("SFB/Aktor/Y1", "0")
+            client.publish("SFB/Aktor/Y2", "0")
+            client.publish("SFB/Aktor/Y3", "0")
+            client.publish("SFB/Aktor/Y4", "0")
+            client.publish("SFB/Aktor/Y5", "0")
+            client.publish("Step_1", "1")
+            client.publish("Step_2", "0")
+            client.publish("Step_3", "0")
+            client.publish("Step_4", "0")
+            client.publish("Step_5", "0")
+            client.publish("Step_6", "0")
+            client.publish("Step_7", "0")
+            client.publish("Step_8", "0")
+            client.publish("Step_9", "0")
+            client.publish("Step_10", "0")
+            client.publish("Step_11", "0")
+            
+            
+
+
+ # Steuerung der Lampen P1–P4 --------------------------------------------------------------------
+
+    if topic == "SFB/Endschalter/B6":
+        if payload == "1":
+            client.publish("SFB/Aktor/P2", "1")
+            client.publish("SFB/Aktor/P1", "0")
+        else:
+            client.publish("SFB/Aktor/P2", "0")
+            client.publish("SFB/Aktor/P1", "1")
+            client.publish("SFB/Aktor/P4", "0")
+
+    if topic == "SFB/Endschalter/B5":
+        if payload == "1":
+            client.publish("SFB/Aktor/P3", "1")
+        else:
+            client.publish("SFB/Aktor/P3", "0")
+
+   
+
+    if topic == "Step_11" and payload == "1":
+        client.publish("SFB/Aktor/P4", "1")
+
+    if topic == "Step_11" and payload == "0":
+        client.publish("SFB/Aktor/P4", "0")
+
+#  Startphase ----------------------------------------------------------------------------------------------------
+    if topic == "SFB/Sensor/S2" and payload == "1":
+        client.publish("Vorwaesche","1")
+
+    if topic == "SFB/Sensor/S2" and payload == "0":
+        client.publish("Vorwaesche","0")
+
+
+# Phase 1 – Vorwäsche ----------------------------------------------------------------------------------------------------
+
+
+    
+    if topic == "SFB/Sensor/S1" and payload == "1"and sensor_data.get("Step_1") == "1":
+        client.publish("SFB/Aktor/Q1", "1")
+        client.publish("SFB/Aktor/Y3", "1")
+        client.publish("Step_1", "0")
+        client.publish("Step_2", "1")
+
+    if topic == "SFB/Endschalter/B2" and payload == "0"and sensor_data.get("Step_2") == "1":
+        client.publish("SFB/Aktor/Q1", "0")
+        client.publish("SFB/Aktor/Y3", "0")
+        client.publish("SFB/Aktor/Q2", "1")
+        client.publish("SFB/Aktor/Y1", "1")
+        client.publish("Step_2", "0")
+        client.publish("Step_3", "1")
+
+    if topic == "SFB/Endschalter/B1" and payload == "0"and sensor_data.get("Step_3") == "1":
+        client.publish("SFB/Aktor/Q2", "0")
+        client.publish("SFB/Aktor/Y1", "0")
+        
+
+    
+# Phase 2 – Hauptwäsche ----------------------------------------------------------------------------------------------------
+    
+    if topic == "SFB/Endschalter/B1" and payload == "0"and sensor_data.get("Step_3") == "1":
+        client.publish("SFB/Aktor/Q3", "1")
+        client.publish("SFB/Aktor/Q4", "1")
+        client.publish("SFB/Aktor/Y2", "1")
+        client.publish("SFB/Aktor/Y4", "1")
+        client.publish("SFB/Aktor/Q1", "1")
+        client.publish("Step_3", "0")
+        client.publish("Step_4", "1")
+
+    if topic == "SFB/Endschalter/B8" and payload == "1"and sensor_data.get("Step_4") == "1":
+        client.publish("SFB/Aktor/Q4", "0")
+        client.publish("SFB/Aktor/Q5", "1")
+        client.publish("SFB/Aktor/Q1", "1")
+        client.publish("Step_4", "0")
+        client.publish("Step_5", "1")
+        client.publish("Step_7", "1")
+
+    # Ketteratzion waschbürste---------------------------------------------------------   
+
+    if topic == "SFB/Endschalter/B8" and payload == "1"and sensor_data.get("Step_6") == "1":
+        client.publish("SFB/Aktor/Q4", "0")
+        client.publish("SFB/Aktor/Q5", "1")
+        client.publish("Step_6", "0")
+        client.publish("Step_5", "1")
+
+
+    if sensor_data.get("SFB/Endschalter/B7") == "0" and sensor_data.get("SFB/Endschalter/B8") == "0" and sensor_data.get("Step_5") == "1":
+        client.publish("SFB/Aktor/Q4", "0")
+        client.publish("SFB/Aktor/Q5", "0")
+        client.publish("Step_5", "0")
+        client.publish("Step_6", "1")
+
+    if topic == "SFB/Endschalter/B7" and payload == "1"and sensor_data.get("Step_6") == "1":
+        client.publish("SFB/Aktor/Q4", "1")
+        client.publish("SFB/Aktor/Q5", "0")
+        client.publish("Step_6", "0")
+        client.publish("Step_5", "1")
+
+
+        
+    # B2 erreicht-------------------------------------------
+
+    if topic == "SFB/Endschalter/B2" and payload == "0"and sensor_data.get("Step_7") == "1":
+            client.publish("SFB/Aktor/Y1", "0")
+            client.publish("SFB/Aktor/Y2", "0")
+            client.publish("SFB/Aktor/Y4", "0")
+            client.publish("SFB/Aktor/Y5", "1")
+            client.publish("SFB/Aktor/Q1", "0")
+            client.publish("SFB/Aktor/Q2", "1")
+            client.publish("Step_7", "0")
+            client.publish("Step_6", "1")
+            client.publish("Step_8", "1")
+
+# Phase 3 – Klarspülen & Trocknen  ----------------------------------------------------------------------------------------------------
+
+    
+    if topic == "SFB/Endschalter/B1" and payload == "0"and sensor_data.get("Step_8") == "1":
+            client.publish("SFB/Aktor/Y1", "0")
+            client.publish("SFB/Aktor/Y4", "0")
+            client.publish("SFB/Aktor/Y5", "0")
+            client.publish("SFB/Aktor/Q1", "0")
+            client.publish("SFB/Aktor/Q2", "0")
+            client.publish("SFB/Aktor/Q3", "0")
+            client.publish("SFB/Aktor/Q4", "0")
+            client.publish("SFB/Aktor/Q5", "1")
+            client.publish("Step_5", "0")
+            client.publish("Step_6", "0")
+            client.publish("Step_8", "0")
+            client.publish("Step_9", "1")
+
+
+    if topic == "SFB/Endschalter/B3" and payload == "0"and sensor_data.get("Step_9") == "1":
+            client.publish("SFB/Aktor/Y1", "1")
+            client.publish("SFB/Aktor/Y2", "1")
+            client.publish("SFB/Aktor/Q1", "1")
+            client.publish("SFB/Aktor/Q2", "0")
+            client.publish("SFB/Aktor/Q3", "1")
+            client.publish("SFB/Aktor/Q4", "0")
+            client.publish("SFB/Aktor/Q5", "0")
+            client.publish("Step_9", "0")
+            client.publish("Step_10", "1")
+
+    if topic == "SFB/Endschalter/B2" and payload == "0"and sensor_data.get("Step_10") == "1":
+                client.publish("SFB/Aktor/Y1", "0")
+                client.publish("SFB/Aktor/Y2", "0")
+                client.publish("SFB/Aktor/Q1", "0")
+                client.publish("SFB/Aktor/Q3", "0")
+                client.publish("SFB/Aktor/Q2", "1")
+                client.publish("SFB/Aktor/Q5", "0")
+                client.publish("SFB/Aktor/Q6", "1")
+                client.publish("Step_10", "0")
+                client.publish("Step_11", "1")
+              
+
+
+# Phase 4 – Abschlussphase -------------------------------------------------
+
+
+    if topic == "SFB/Endschalter/B1" and payload == "0"and sensor_data.get("Step_11") == "1":
+          
+                client.publish("SFB/Aktor/Q2", "0")
+                client.publish("SFB/Aktor/Q6", "0")
+                client.publish("SFB/Aktor/P2", "0")
+                client.publish("Step_10  ", "0")
+                client.publish("Step_1", "1")
+              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# MQTT-Client erstellen und verbinden
+client = mqtt.Client()
+client.connect(broker_address, port)
+
+# Callback-Funktion für die Nachrichtenverarbeitung festlegen
+client.on_message = on_message
+
+# Alle Topics abonnieren
+for topic in topics:
+    client.subscribe(topic)
+
+# Starte die MQTT-Schleife zur Verarbeitung empfangener Nachrichten
+client.loop_forever()
