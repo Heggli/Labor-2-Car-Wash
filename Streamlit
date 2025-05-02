@@ -1,0 +1,68 @@
+# ✅ streamlit_panel.py – Modernes Web-Interface mit Icons & Stil
+import streamlit as st
+import paho.mqtt.client as mqtt
+
+MQTT_BROKER = "127.0.0.1"
+MQTT_PORT = 1883
+
+client = mqtt.Client()
+client.connect(MQTT_BROKER, MQTT_PORT)
+
+st.set_page_config(page_title="Autowaschanlage", page_icon="🧽", layout="centered")
+st.markdown("""
+    <style>
+    .main {
+        background-color: #eef1f5;
+    }
+    .stButton > button {
+        font-size: 20px;
+        padding: 0.75em 1em;
+        border-radius: 12px;
+        border: none;
+        background-color: #0e76a8;
+        color: white;
+    }
+    .stButton > button:hover {
+        background-color: #0891b2;
+    }
+    .stToggle > div {
+        font-size: 18px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("🧼 Autowaschanlage Steuerung")
+st.markdown("Steuere die Waschstraße bequem per Webinterface.")
+
+
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("🔁 RESET (S0)", use_container_width=True):
+        client.publish("SFB/Sensor/S0", "1")
+        st.success("Reset wurde gesendet ✅")
+
+with col2:
+    if st.button("🚀 START (S1)", use_container_width=True):
+        client.publish("SFB/Sensor/S1", "1")
+        client.publish("Step_1", "1")
+        st.success("Waschvorgang gestartet ✅")
+    
+
+
+with col3:
+    vorwaesche = st.toggle("🫧 Vorwäsche (S2)")
+    client.publish("SFB/Sensor/S2", "1" if vorwaesche else "0")
+    st.info("Vorwäsche ist " + ("aktiv ✅" if vorwaesche else "deaktiviert ⛔"))
+
+st.markdown("""
+---
+⚙️ **Tipp:** Achte darauf, dass die Steuerung und die Brücke aktiv sind.
+""")
+
+
+
+
+ 
+        
